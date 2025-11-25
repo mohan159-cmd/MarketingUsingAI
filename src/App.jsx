@@ -1,20 +1,67 @@
-import { MsalProvider } from '@azure/msal-react';
+import React, { useState } from 'react';
 import './App.css';
-import { msalConfig } from './features/auth/authConfig';
-import LoginButton from './features/auth/LoginButton';
-import { PublicClientApplication } from "@azure/msal-browser";
+import { AuthProvider, useAuth } from './features/auth/AuthContext';
+import SignInForm from './components/SignInForm';
+import SignUpForm from './components/SignUpForm';
+import Dashboard from './components/Dashboard';
 
-export const msalInstance = new PublicClientApplication(msalConfig);
-await msalInstance.initialize();
+/**
+ * Main App Router Component
+ * Handles navigation between SignIn, SignUp, and Dashboard
+ */
+function AppRouter() {
+  const { user, token } = useAuth();
+  const [currentView, setCurrentView] = useState('signin'); // 'signin' | 'signup' | 'dashboard'
 
-function App() {
-  
-  return (
-    <MsalProvider instance={msalInstance}>
+  // If user is authenticated, show Dashboard
+  if (token && user) {
+    return <Dashboard />;
+  }
+
+  // Otherwise show SignIn or SignUp based on current view
+  if (currentView === 'signup') {
+    return (
       <div>
-        <LoginButton />
+        <SignUpForm />
+        {/* Override link behavior to use state */}
+        <style>{`
+          .signup-footer a {
+            cursor: pointer;
+          }
+        `}</style>
+        <script>{`
+          document.addEventListener('click', (e) => {
+            if (e.target.matches('.signup-footer a')) {
+              e.preventDefault();
+            }
+          });
+        `}</script>
       </div>
-    </MsalProvider>
+    );
+  }
+
+  return (
+    <div>
+      <SignInForm />
+      {/* Override link behavior to use state */}
+      <style>{`
+        .signin-footer a {
+          cursor: pointer;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+/**
+ * Main App Component
+ * Wraps everything in AuthProvider
+ */
+function App() {
+  return (
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
   );
 }
 
